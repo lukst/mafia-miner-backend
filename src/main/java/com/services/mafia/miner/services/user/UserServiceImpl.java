@@ -1,17 +1,38 @@
 package com.services.mafia.miner.services.user;
 
+import com.google.common.util.concurrent.RateLimiter;
+import com.services.mafia.miner.dto.user.AddBalanceRequest;
 import com.services.mafia.miner.dto.user.UserDTO;
+import com.services.mafia.miner.entity.transaction.ExceptionDetail;
+import com.services.mafia.miner.entity.transaction.ObjectType;
 import com.services.mafia.miner.entity.user.Token;
 import com.services.mafia.miner.entity.user.User;
+import com.services.mafia.miner.exception.BlockchainTransactionException;
 import com.services.mafia.miner.exception.InvalidTokenException;
 import com.services.mafia.miner.exception.UserNotFoundException;
+import com.services.mafia.miner.repository.transaction.ExceptionDetailRepository;
+import com.services.mafia.miner.repository.transaction.TransactionRepository;
 import com.services.mafia.miner.repository.user.TokenRepository;
 import com.services.mafia.miner.repository.user.UserRepository;
+import com.services.mafia.miner.entity.transaction.Transaction;
+import com.services.mafia.miner.entity.transaction.TransactionType;
+import com.services.mafia.miner.util.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
+import org.jetbrains.annotations.NotNull;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
+import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.methods.response.EthGetTransactionReceipt;
+import org.web3j.protocol.core.methods.response.EthTransaction;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.protocol.http.HttpService;
+import org.web3j.utils.Convert;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Service
 @AllArgsConstructor
@@ -19,6 +40,9 @@ public class UserServiceImpl implements UserService{
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final TokenRepository tokenRepository;
+    private final TransactionRepository transactionRepository;
+    private final RateLimiter rateLimiter;
+    private final ExceptionDetailRepository exceptionDetailRepository;
 
     @Override
     public UserDTO getUser(HttpServletRequest request) {
@@ -42,5 +66,152 @@ public class UserServiceImpl implements UserService{
                 .orElseThrow(() -> new InvalidTokenException("Token is not valid or expired"));
         return userRepository.findById(tokenFound.getUser().getId())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
+    }
+
+    @Override
+    public UserDTO addPendingTransaction(HttpServletRequest request, AddBalanceRequest addBalanceRequest) {
+        User userFound = findUserByToken(extractTokenFromRequest(request));
+        if (transactionRepository.findByTxId(addBalanceRequest.getTxId()).isPresent()) {
+            throw new BlockchainTransactionException("The txId is already registered");
+        }
+        Transaction transaction = Transaction.builder()
+                .user(userFound)
+                .isBlockchainTransaction(true)
+                .isPendingValidation(true)
+                .transactionDate(LocalDateTime.now())
+                .transactionType(TransactionType.DEPOSIT)
+                .bnb(addBalanceRequest.getBnbBalance())
+                .objectType(ObjectType.USER)
+                .objectId(userFound.getId())
+                .operation(Constants.DEPOSIT_OPERATION)
+                .txId(addBalanceRequest.getTxId())
+                .build();
+        transactionRepository.save(transaction);
+        return modelMapper.map(userFound, UserDTO.class);
+    }
+
+    @Override
+    public void addUserBalance(Transaction transaction) {
+        try {
+            if (!validateTransaction(transaction.getTxId(), transaction.getUser(), transaction.getBnb())) {
+                throw new BlockchainTransactionException("The transaction was not successful.");
+            }
+            BigDecimal newUserBalance = transaction.getUser().getBnbBalance().add(transaction.getBnb());
+            transaction.getUser().setBnbBalance(newUserBalance);
+            transaction.getUser().setTotalDeposit(transaction.getUser().getTotalDeposit().add(transaction.getBnb()));
+            transaction.setTransactionDate(LocalDateTime.now());
+            userRepository.save(transaction.getUser());
+            transaction.setOperation(Constants.DEPOSIT_OPERATION_SUCCESS);
+        } catch (Exception ex) {
+            // Create an instance of the exception entity
+            ExceptionDetail exceptionDetails = ExceptionDetail.builder()
+                    .timestamp(LocalDateTime.now())
+                    .exceptionType(ex.getClass().getName())
+                    .message(ex.getMessage())
+                    .details(ex.getLocalizedMessage())
+                    .userId(transaction.getUser().getId())
+                    .transactionId(transaction.getId())
+                    .build();
+            transaction.setOperation(Constants.DEPOSIT_OPERATION_FAILED + " " + ex.getMessage());
+            // Save the exception details to the database
+            exceptionDetailRepository.save(exceptionDetails);
+        } finally {
+            transaction.setPendingValidation(false);
+            transactionRepository.save(transaction);
+        }
+    }
+
+    private boolean validateTransaction(String txId, User user, BigDecimal amount) throws IOException, InterruptedException {
+        final int MAX_RETRIES = 3;
+        final long WAIT_TIME_MS = 5000; // 5 seconds
+        Web3j web3j = Web3j.build(new HttpService("https://bsc-dataseed.binance.org/"));
+
+        Exception lastException = null;
+
+        for (int i = 0; i < MAX_RETRIES; i++) {
+            try {
+                rateLimiter.acquire();
+
+                EthGetTransactionReceipt transactionReceipt = web3j.ethGetTransactionReceipt(txId).send();
+
+                if (transactionReceipt.getTransactionReceipt().isPresent()) {
+                    TransactionReceipt receipt = transactionReceipt.getTransactionReceipt().get();
+
+                    // Ensure the transaction was successful
+                    if (!receipt.isStatusOK()) {
+                        throw new BlockchainTransactionException("The transaction was not successful. " + txId);
+                    }
+
+                    // Check that the transaction is from the user's wallet
+                    if (!receipt.getFrom().equalsIgnoreCase(user.getWalletAddress())) {
+                        throw new BlockchainTransactionException("The transaction was not made from the correct wallet " + txId);
+                    }
+
+                    EthTransaction ethTransaction = getEthTransaction(web3j, txId);
+
+                    if (ethTransaction.getTransaction().isPresent()) {
+                        org.web3j.protocol.core.methods.response.Transaction transaction = ethTransaction.getTransaction().get();
+
+                        // For BNB, check the 'to' field and 'value'
+                        if (!transaction.getTo().equalsIgnoreCase(Constants.GAME_WALLET_ADDRESS)) {
+                            throw new BlockchainTransactionException("The transaction was not made to the game's wallet " + transaction.getTo());
+                        }
+
+                        // Convert wei to BNB (or the unit you are comparing with)
+                        BigDecimal transferredAmount = Convert.fromWei(new BigDecimal(transaction.getValue()), Convert.Unit.ETHER);
+
+                        if (transferredAmount.compareTo(amount) != 0) {
+                            throw new BlockchainTransactionException("The transferred amount does not match the expected amount " + txId);
+                        } else {
+                            return true;
+                        }
+                    } else {
+                        throw new BlockchainTransactionException("Could not find a transaction with the given ID " + txId);
+                    }
+                } else {
+                    throw new BlockchainTransactionException("Could not find a transaction with the given ID " + txId);
+                }
+            } catch (BlockchainTransactionException e) {
+                lastException = e;
+                Thread.sleep(WAIT_TIME_MS);
+            }
+        }
+
+        // If reached here, all retries have failed.
+        throw new BlockchainTransactionException("After " + MAX_RETRIES + " retries, validation failed: " + lastException.getMessage(), lastException);
+    }
+
+    @NotNull
+    private static TransactionReceipt getTransactionReceipt(String txId, EthGetTransactionReceipt transactionReceipt) {
+        if (transactionReceipt.getTransactionReceipt().isEmpty()) {
+            throw new BlockchainTransactionException("No transaction receipt found");
+        }
+        TransactionReceipt receipt = transactionReceipt.getTransactionReceipt().get();
+
+        if (!receipt.isStatusOK()) {
+            throw new BlockchainTransactionException("The transaction was not successful. " + txId);
+        }
+
+        if (!receipt.getTo().equalsIgnoreCase(Constants.BNB_MAINNET_CONTRACT_ADDRESS)) {
+            throw new BlockchainTransactionException("The transaction was not made to the correct contract " + txId);
+        }
+        return receipt;
+    }
+
+    private EthTransaction getEthTransaction(Web3j web3j, String txId) throws IOException, InterruptedException {
+        EthTransaction ethTransaction = null;
+        int MAX_RETRIES = 5;
+        for (int i = 0; i < MAX_RETRIES; i++) {
+            ethTransaction = web3j.ethGetTransactionByHash(txId).send();
+            if (ethTransaction.getTransaction().isPresent()) {
+                break;
+            }
+            int WAITING_TIME = 8000;
+            Thread.sleep(WAITING_TIME);
+        }
+        if (ethTransaction.getTransaction().isEmpty()) {
+            throw new BlockchainTransactionException("Could not find a transaction with the given ID.");
+        }
+        return ethTransaction;
     }
 }

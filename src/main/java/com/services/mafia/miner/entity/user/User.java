@@ -39,12 +39,18 @@ public class User implements UserDetails {
     @ToString.Exclude
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<Token> tokens;
-    @Column(nullable = false, precision = 19, scale = 4)
+    @Column(nullable = false, precision = 19, scale = 5)
     @Builder.Default
-    private BigDecimal totalDeposit = new BigDecimal("0").setScale(4, RoundingMode.HALF_UP);
-    @Column(nullable = false, precision = 19, scale = 4)
+    private BigDecimal bnbBalance = new BigDecimal("0").setScale(5, RoundingMode.HALF_UP);
+    @Column(nullable = false, precision = 19, scale = 5)
     @Builder.Default
-    private BigDecimal totalWithdraw = new BigDecimal("0").setScale(4, RoundingMode.HALF_UP);
+    private BigDecimal mcoinBalance = new BigDecimal("0").setScale(5, RoundingMode.HALF_UP);
+    @Column(nullable = false, precision = 19, scale = 5)
+    @Builder.Default
+    private BigDecimal totalDeposit = new BigDecimal("0").setScale(5, RoundingMode.HALF_UP);
+    @Column(nullable = false, precision = 19, scale = 5)
+    @Builder.Default
+    private BigDecimal totalWithdraw = new BigDecimal("0").setScale(5, RoundingMode.HALF_UP);
     @Column(nullable = false)
     @Builder.Default
     private boolean isAccountNonLocked = true;

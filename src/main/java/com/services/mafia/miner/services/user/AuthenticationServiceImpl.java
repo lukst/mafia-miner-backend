@@ -89,11 +89,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private User registerUser(AuthenticationRequest authenticationRequest, HttpServletRequest request){
         String ip = extractIp(request);
+        User referUser = null;
+        if(authenticationRequest.getReferralCode() != null){
+            referUser = userRepository.findByReferralCode(authenticationRequest.getReferralCode()).orElse(null);
+        }
         User user = userRepository.save(User.builder()
                 .role(Role.MANAGER)
                 .walletAddress(authenticationRequest.getUserAddress())
                 .referralCode(randomCodeGeneratorService.generateReferralCode())
                 .build());
+        if(referUser != null){
+            user.setReferrer(referUser);
+        }
         user.getIpAddresses().add(ip);
         if (authenticationRequest.getReferralCode() != null) {
             User referrer = userRepository.findByReferralCode(authenticationRequest.getReferralCode()).orElse(null);

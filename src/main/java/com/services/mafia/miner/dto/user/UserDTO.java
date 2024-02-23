@@ -14,11 +14,11 @@ import java.math.BigDecimal;
 @Builder
 public class UserDTO {
     private Long id;
-    private String username;
-    private String wallet;
+    private String walletAddress;
     private String referralCode;
     private Role role;
-    private BigDecimal balance;
+    private BigDecimal bnbBalance;
+    private BigDecimal mcoinBalance;
     private BigDecimal totalDeposit;
     private BigDecimal totalWithdraw;
     private boolean isAccountNonLocked;
