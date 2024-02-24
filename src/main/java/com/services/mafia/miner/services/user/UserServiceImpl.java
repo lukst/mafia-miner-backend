@@ -7,9 +7,7 @@ import com.services.mafia.miner.entity.transaction.ExceptionDetail;
 import com.services.mafia.miner.entity.transaction.ObjectType;
 import com.services.mafia.miner.entity.user.Token;
 import com.services.mafia.miner.entity.user.User;
-import com.services.mafia.miner.exception.BlockchainTransactionException;
-import com.services.mafia.miner.exception.InvalidTokenException;
-import com.services.mafia.miner.exception.UserNotFoundException;
+import com.services.mafia.miner.exception.*;
 import com.services.mafia.miner.repository.transaction.ExceptionDetailRepository;
 import com.services.mafia.miner.repository.transaction.TransactionRepository;
 import com.services.mafia.miner.repository.user.TokenRepository;
@@ -69,6 +67,11 @@ public class UserServiceImpl implements UserService{
     }
 
     @Override
+    public User findUserByWallet(String wallet) {
+        return userRepository.findByWalletAddress(wallet).orElseThrow(() -> new InvalidInputException("User with wallet " + wallet + " not found"));
+    }
+
+    @Override
     public UserDTO addPendingTransaction(HttpServletRequest request, AddBalanceRequest addBalanceRequest) {
         User userFound = findUserByToken(extractTokenFromRequest(request));
         if (transactionRepository.findByTxId(addBalanceRequest.getTxId()).isPresent()) {
@@ -121,6 +124,29 @@ public class UserServiceImpl implements UserService{
         }
     }
 
+    @Override
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
+    @Override
+    public void subtractUserBNB(User userFound, BigDecimal bnbToSubtract) {
+        if (userFound.getBnbBalance().compareTo(bnbToSubtract) < 0) {
+            throw new UserWithNoBalanceException("Not enough BNB");
+        }
+        userFound.setBnbBalance(userFound.getBnbBalance().subtract(bnbToSubtract));
+        userRepository.save(userFound);
+    }
+
+    @Override
+    public void subtractUserMCOIN(User userFound, BigDecimal mcoinToSubtract) {
+        if (userFound.getMcoinBalance().compareTo(mcoinToSubtract) < 0) {
+            throw new UserWithNoBalanceException("Not enough MCOIN");
+        }
+        userFound.setMcoinBalance(userFound.getMcoinBalance().subtract(mcoinToSubtract));
+        userRepository.save(userFound);
+    }
+
     private boolean validateTransaction(String txId, User user, BigDecimal amount) throws IOException, InterruptedException {
         final int MAX_RETRIES = 3;
         final long WAIT_TIME_MS = 5000; // 5 seconds
@@ -153,7 +179,7 @@ public class UserServiceImpl implements UserService{
                         org.web3j.protocol.core.methods.response.Transaction transaction = ethTransaction.getTransaction().get();
 
                         // For BNB, check the 'to' field and 'value'
-                        if (!transaction.getTo().equalsIgnoreCase(Constants.GAME_WALLET_ADDRESS)) {
+                        if (!transaction.getTo().equalsIgnoreCase(Constants.GAME_WALLET)) {
                             throw new BlockchainTransactionException("The transaction was not made to the game's wallet " + transaction.getTo());
                         }
 
@@ -192,7 +218,7 @@ public class UserServiceImpl implements UserService{
             throw new BlockchainTransactionException("The transaction was not successful. " + txId);
         }
 
-        if (!receipt.getTo().equalsIgnoreCase(Constants.BNB_MAINNET_CONTRACT_ADDRESS)) {
+        if (!receipt.getTo().equalsIgnoreCase(Constants.BNB_MAINNET)) {
             throw new BlockchainTransactionException("The transaction was not made to the correct contract " + txId);
         }
         return receipt;

@@ -72,7 +72,7 @@ public class DataLoader implements CommandLineRunner {
                     .build());
             nftCatalogRepository.save(NFTCatalog.builder()
                     .name("Sottocapo")
-                    .image("soldato.png")
+                    .image("sottocapo.png")
                     .type(NFTType.PAID)
                     .nfts(new ArrayList<>())
                     .bnbCost(new BigDecimal("0.5").setScale(5, RoundingMode.HALF_UP))

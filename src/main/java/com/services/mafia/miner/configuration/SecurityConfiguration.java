@@ -43,19 +43,10 @@ public class SecurityConfiguration {
                 .csrf().disable()
                 .authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers(mvc.pattern("/api/v1/auth/**"),
-                                mvc.pattern("/v2/api-docs"),
-                                mvc.pattern("/v3/api-docs"),
-                                mvc.pattern("/v3/api-docs/**"),
-                                mvc.pattern("/swagger-resources"),
-                                mvc.pattern("/swagger-resources/**"),
                                 mvc.pattern("/configuration/ui"),
                                 mvc.pattern("/configuration/security"),
-                                mvc.pattern("/swagger-ui/**"),
                                 mvc.pattern("/webjars/**"),
-                                mvc.pattern("/swagger-ui.html"),
-                                mvc.pattern("/api/v1/warbot/img/**"),
-                                mvc.pattern("/api/v1/game-info/**"),
-                                mvc.pattern("/api/v1/market/item/last-sold")).permitAll()
+                                mvc.pattern("/api/v1/images/**")).permitAll()
                         .anyRequest().authenticated()
                 )
                 .cors().configurationSource(corsConfigurationSource())
