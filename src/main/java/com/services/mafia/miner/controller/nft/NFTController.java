@@ -26,6 +26,14 @@ public class NFTController {
         return new ResponseEntity<>(nftService.mintNFT(request, catalogId, bnbMint), HttpStatus.OK);
     }
 
+    @PostMapping("/play/{nftId}")
+    public ResponseEntity<NFTDTO> play(
+            HttpServletRequest request,
+            @PathVariable Long nftId
+    ) {
+        return new ResponseEntity<>(nftService.play(request, nftId), HttpStatus.OK);
+    }
+
     @GetMapping
     @ResponseBody
     public Page<NFTDTO> getPagedTransactionForUser(@RequestParam("page") Integer page,

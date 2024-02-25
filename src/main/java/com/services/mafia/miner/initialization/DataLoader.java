@@ -27,7 +27,7 @@ public class DataLoader implements CommandLineRunner {
     private void createNFTCatalog() {
         if (nftCatalogRepository.findAll().isEmpty()) {
             nftCatalogRepository.save(NFTCatalog.builder()
-                    .name("Pet")
+                    .name("Chihuahua")
                     .image("free.png")
                     .type(NFTType.FREE)
                     .nfts(new ArrayList<>())

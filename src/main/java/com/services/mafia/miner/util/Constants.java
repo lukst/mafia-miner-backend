@@ -13,4 +13,5 @@ public interface Constants {
     String DEPOSIT_OPERATION_SUCCESS = "Deposit success";
     String DEPOSIT_OPERATION_FAILED = "Deposit failed";
     String MINT_NFT_OPERATION = "Mint NFT";
+    String NFT_REWARD = "Reward";
 }

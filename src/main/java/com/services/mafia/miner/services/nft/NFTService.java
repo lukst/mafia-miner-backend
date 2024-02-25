@@ -7,4 +7,5 @@ import org.springframework.data.domain.Page;
 public interface NFTService {
     NFTDTO mintNFT(HttpServletRequest request, Long catalogID, boolean bnbMint);
     Page<NFTDTO> filterNftsForUser(HttpServletRequest request, int page, int size);
+    NFTDTO play(HttpServletRequest request, Long nftId);
 }

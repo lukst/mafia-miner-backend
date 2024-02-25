@@ -25,6 +25,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Random;
 
 @Service
@@ -99,6 +102,45 @@ public class NFTServiceImpl implements NFTService {
         Pageable pageable = PageRequest.of(page, size);
         Page<NFT> nfts = nftRepository.findAllByUser(user, pageable);
         return nfts.map(nft -> modelMapper.map(nft, NFTDTO.class));
+    }
+
+    @Override
+    @Transactional
+    public NFTDTO play(HttpServletRequest request, Long nftId) {
+        User user = userService.findUserByToken(userService.extractTokenFromRequest(request));
+        NFT nft = nftRepository.findById(nftId).orElseThrow(() -> new InvalidInputException("NFT does not exist"));
+        LocalDateTime now = LocalDateTime.now();
+        if (nft.getAvailableMiningDays() <= 0) {
+            throw new InvalidInputException("No mining days left");
+        }
+        if (!nft.getUser().getId().equals(user.getId())) {
+            throw new InvalidInputException("This NFT is not yours");
+        }
+        if (nft.getLastRewardAt() != null && Duration.between(nft.getLastRewardAt(), now).toHours() < 24) {
+            throw new InvalidInputException("You can only mine once every 24 hours");
+        }
+        BigDecimal amountMined = nft.getNftCatalog().getDailyFarm();
+        if (nft.getFarmType() == FarmType.BNB) {
+            user.setBnbBalance(user.getBnbBalance().add(amountMined));
+            transactionService.saveTransactionRecordBNB(
+                    TransactionType.NFT_REWARD,
+                    user,
+                    amountMined,
+                    Constants.NFT_REWARD + " " + amountMined + " for " + nft.getNftCatalog().getName());
+        } else {
+            user.setMcoinBalance(user.getMcoinBalance().add(amountMined));
+            transactionService.saveTransactionRecordMCOIN(
+                    TransactionType.NFT_REWARD,
+                    user,
+                    amountMined,
+                    Constants.NFT_REWARD + " " + amountMined + " for " + nft.getNftCatalog().getName());
+        }
+        nft.setLastRewardAt(now);
+        nft.setNextRewardAt(now.plusDays(1));
+        nft.setAvailableMiningDays(nft.getAvailableMiningDays() - 1);
+        nftRepository.save(nft);
+        userService.save(user);
+        return modelMapper.map(nft, NFTDTO.class);
     }
 
     private void handleReferrer(boolean bnbMint, User referralUser, BigDecimal mintPrice) {
