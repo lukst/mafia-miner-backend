@@ -6,5 +6,6 @@ public enum TransactionType {
     MINT_NFT_BNB,
     MINT_NFT_MCOIN,
     MINT_NFT_BNB_FEE,
-    NFT_REWARD
+    NFT_REWARD,
+    DEVELOPER_FEE_WITHDRAW
 }

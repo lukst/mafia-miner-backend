@@ -9,6 +9,9 @@ public interface Constants {
     String BNB_MAINNET = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c";
     BigDecimal REFERRAL_FEE_PERCENT = new BigDecimal("0.05");
     BigDecimal NFT_FEE = new BigDecimal("0.1");
+    BigDecimal WITHDRAW_FEE = new BigDecimal("0.05");
+    BigDecimal MINIMUM_DEPOSIT = new BigDecimal("0.00025");
+    BigDecimal MINIMUM_WITHDRAW = new BigDecimal("0.03");
     String DEPOSIT_OPERATION = "Deposit arrived";
     String DEPOSIT_OPERATION_SUCCESS = "Deposit success";
     String DEPOSIT_OPERATION_FAILED = "Deposit failed";

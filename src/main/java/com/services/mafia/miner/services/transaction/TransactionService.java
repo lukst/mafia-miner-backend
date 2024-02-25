@@ -14,4 +14,5 @@ public interface TransactionService {
     void saveTransactionRecordBNB(TransactionType transactionType, User userFound, BigDecimal bnb, String operation);
     void saveTransactionRecordMCOIN(TransactionType transactionType, User userFound, BigDecimal mcoin, String operation);
     TotalStatsDTO getTotalStats();
+    Page<TransactionDTO> getAllTransactionsForUser(String wallet, int page, int size);
 }

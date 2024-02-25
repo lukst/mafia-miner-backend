@@ -21,6 +21,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
@@ -74,5 +76,13 @@ public class TransactionServiceImpl implements TransactionService {
                 .totalUsers(userRepository.findAll().size())
                 .totalNfts(nftRepository.findAll().size())
                 .build();
+    }
+
+    @Override
+    public Page<TransactionDTO> getAllTransactionsForUser(String wallet, int page, int size) {
+        User user = userService.findUserByWallet(wallet);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
+        Page<Transaction> allTransactionsForUser = transactionRepository.findAllByUser(user, pageable);
+        return allTransactionsForUser.map(transaction -> modelMapper.map(transaction, TransactionDTO.class));
     }
 }

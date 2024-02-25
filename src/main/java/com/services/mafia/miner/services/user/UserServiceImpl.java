@@ -74,6 +74,9 @@ public class UserServiceImpl implements UserService{
     @Override
     public UserDTO addPendingTransaction(HttpServletRequest request, AddBalanceRequest addBalanceRequest) {
         User userFound = findUserByToken(extractTokenFromRequest(request));
+        if (addBalanceRequest.getBnbBalance().compareTo(Constants.MINIMUM_DEPOSIT) < 0) {
+            throw new IllegalArgumentException("The balance is less than the minimum required deposit.");
+        }
         if (transactionRepository.findByTxId(addBalanceRequest.getTxId()).isPresent()) {
             throw new BlockchainTransactionException("The txId is already registered");
         }
