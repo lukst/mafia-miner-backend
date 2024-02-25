@@ -3,8 +3,14 @@ package com.services.mafia.miner.services.user;
 import com.services.mafia.miner.dto.user.AuthenticationRequest;
 import com.services.mafia.miner.dto.user.AuthenticationResponse;
 import com.services.mafia.miner.dto.user.NonceResponse;
+import com.services.mafia.miner.entity.nft.FarmType;
+import com.services.mafia.miner.entity.nft.NFT;
+import com.services.mafia.miner.entity.nft.NFTCatalog;
+import com.services.mafia.miner.entity.nft.NFTType;
 import com.services.mafia.miner.entity.user.*;
 import com.services.mafia.miner.exception.InvalidInputException;
+import com.services.mafia.miner.repository.nft.NFTCatalogRepository;
+import com.services.mafia.miner.repository.nft.NFTRepository;
 import com.services.mafia.miner.repository.user.NonceRepository;
 import com.services.mafia.miner.repository.user.TokenRepository;
 import com.services.mafia.miner.repository.user.UserRepository;
@@ -14,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +31,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final NonceRepository nonceRepository;
     private final IpGeolocationService ipGeolocationService;
     private final TokenRepository tokenRepository;
+    private final NFTRepository nftRepository;
+    private final NFTCatalogRepository nftCatalogRepository;
 
     @Override
     @Transactional
@@ -87,10 +94,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         tokenRepository.save(token);
     }
 
-    private User registerUser(AuthenticationRequest authenticationRequest, HttpServletRequest request){
+    private User registerUser(AuthenticationRequest authenticationRequest, HttpServletRequest request) {
         String ip = extractIp(request);
         User referUser = null;
-        if(authenticationRequest.getReferralCode() != null){
+        if (authenticationRequest.getReferralCode() != null) {
             referUser = userRepository.findByReferralCode(authenticationRequest.getReferralCode()).orElse(null);
         }
         User user = userRepository.save(User.builder()
@@ -98,17 +105,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .walletAddress(authenticationRequest.getUserAddress())
                 .referralCode(randomCodeGeneratorService.generateReferralCode())
                 .build());
-        if(referUser != null){
+        if (referUser != null) {
             user.setReferrer(referUser);
         }
         user.getIpAddresses().add(ip);
         if (authenticationRequest.getReferralCode() != null) {
-            User referrer = userRepository.findByReferralCode(authenticationRequest.getReferralCode()).orElse(null);
-            if (referrer != null) {
-                user.setReferrer(referrer);
-            }
+            userRepository.findByReferralCode(authenticationRequest.getReferralCode()).ifPresent(user::setReferrer);
         }
         var savedUser = userRepository.save(user);
+        NFTCatalog nftCatalog = nftCatalogRepository.findNftCatalogByType(NFTType.FREE).orElseThrow(() -> new InvalidInputException("Catalog does not exist"));
+        nftRepository.save(NFT.builder()
+                .user(user)
+                .nftCatalog(nftCatalog)
+                .farmType(FarmType.BNB)
+                .availableMiningDays(50)
+                .maxMiningDays(50)
+                .build());
         ipGeolocationService.getCountryByIp(ip).thenAccept(country -> {
             user.setCountry(country);
             userRepository.save(user);
@@ -120,7 +132,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         String remoteAddr = "";
         if (request != null) {
             remoteAddr = request.getHeader("X-FORWARDED-FOR");
-            if (remoteAddr == null || "".equals(remoteAddr)) {
+            if (remoteAddr == null || remoteAddr.isEmpty()) {
                 remoteAddr = request.getRemoteAddr();
             }
         }

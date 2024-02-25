@@ -10,5 +10,6 @@ import java.math.BigDecimal;
 
 public interface TransactionService {
     Page<TransactionDTO> filterTransactionsForUser(HttpServletRequest request, int page, int size);
-    void saveTransactionRecord(TransactionType transactionType, User userFound, BigDecimal amount);
+    void saveTransactionRecordBNB(TransactionType transactionType, User userFound, BigDecimal bnb, String operation);
+    void saveTransactionRecordMCOIN(TransactionType transactionType, User userFound, BigDecimal mcoin, String operation);
 }

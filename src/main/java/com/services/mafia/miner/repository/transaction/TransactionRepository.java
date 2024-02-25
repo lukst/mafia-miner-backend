@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TransactionRepository extends JpaRepository<Transaction, Long>, JpaSpecificationExecutor<Transaction> {
+public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     Page<Transaction> findAllByUser(User user, Pageable pageable);
     Optional<Transaction> findByTxId(String txId);
     List<Transaction> findByUser(User user);

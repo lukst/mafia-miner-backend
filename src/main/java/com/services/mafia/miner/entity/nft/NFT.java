@@ -27,6 +27,8 @@ public class NFT extends BaseEntity {
     @Column
     private int availableMiningDays;
     @Column
+    private int maxMiningDays;
+    @Column
     private LocalDateTime lastRewardAt;
     @Column
     private LocalDateTime nextRewardAt;

@@ -1,15 +1,15 @@
 package com.services.mafia.miner.controller.nft;
 
 import com.services.mafia.miner.dto.nft.NFTDTO;
+import com.services.mafia.miner.dto.transaction.TransactionDTO;
 import com.services.mafia.miner.services.nft.NFTService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 @Controller
 @AllArgsConstructor
@@ -24,5 +24,13 @@ public class NFTController {
             @PathVariable boolean bnbMint
     ) {
         return new ResponseEntity<>(nftService.mintNFT(request, catalogId, bnbMint), HttpStatus.OK);
+    }
+
+    @GetMapping
+    @ResponseBody
+    public Page<NFTDTO> getPagedTransactionForUser(@RequestParam("page") Integer page,
+                                                   @RequestParam("size") Integer size,
+                                                   HttpServletRequest request) {
+        return nftService.filterNftsForUser(request, page, size);
     }
 }

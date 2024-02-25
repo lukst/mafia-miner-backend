@@ -17,6 +17,7 @@ public class NFTDTO {
     private NFTCatalogDTO nftCatalog;
     private FarmType farmType;
     private int availableMiningDays;
+    private int maxMiningDays;
     private LocalDateTime lastRewardAt;
     private LocalDateTime nextRewardAt;
 }

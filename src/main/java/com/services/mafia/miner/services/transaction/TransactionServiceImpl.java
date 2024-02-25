@@ -13,6 +13,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -29,21 +30,36 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public Page<TransactionDTO> filterTransactionsForUser(HttpServletRequest request, int page, int size) {
         User user = userService.findUserByToken(userService.extractTokenFromRequest(request));
-        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
         Page<Transaction> transactions = transactionRepository.findAllByUser(user, pageable);
         return transactions.map(transaction -> modelMapper.map(transaction, TransactionDTO.class));
     }
 
     @Override
-    public void saveTransactionRecord(TransactionType transactionType, User userFound, BigDecimal amount) {
+    public void saveTransactionRecordBNB(TransactionType transactionType, User userFound, BigDecimal bnb, String operation) {
         Transaction transactionRecord = new Transaction();
         transactionRecord.setTransactionType(transactionType);
         transactionRecord.setTransactionDate(LocalDateTime.now());
         transactionRecord.setUser(userFound);
         transactionRecord.setBlockchainTransaction(false);
         transactionRecord.setPendingValidation(false);
-        transactionRecord.setBnb(BigDecimal.ZERO.setScale(5, RoundingMode.HALF_UP));
-        transactionRecord.setMcoin(amount.setScale(5, RoundingMode.HALF_UP));
+        transactionRecord.setBnb(bnb.setScale(5, RoundingMode.HALF_UP));
+        transactionRecord.setMcoin(BigDecimal.ZERO);
+        transactionRecord.setOperation(operation);
+        transactionRepository.save(transactionRecord);
+    }
+
+    @Override
+    public void saveTransactionRecordMCOIN(TransactionType transactionType, User userFound, BigDecimal mcoin, String operation) {
+        Transaction transactionRecord = new Transaction();
+        transactionRecord.setTransactionType(transactionType);
+        transactionRecord.setTransactionDate(LocalDateTime.now());
+        transactionRecord.setUser(userFound);
+        transactionRecord.setBlockchainTransaction(false);
+        transactionRecord.setPendingValidation(false);
+        transactionRecord.setBnb(BigDecimal.ZERO);
+        transactionRecord.setMcoin(mcoin.setScale(5, RoundingMode.HALF_UP));
+        transactionRecord.setOperation(operation);
         transactionRepository.save(transactionRecord);
     }
 }

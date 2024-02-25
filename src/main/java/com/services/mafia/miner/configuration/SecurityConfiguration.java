@@ -69,12 +69,12 @@ public class SecurityConfiguration {
         config.setAllowedOrigins(Arrays.asList(
                 "http://localhost:4200",
                 "http://localhost",
-                "http://mafiaminer.io:8085",
-                "https://mafiaminer.io",
-                "https://pre01.mafiaminer.io",
-                "http://pre01.mafiaminer.io:8085",
-                "https://pre02.mafiaminer.io",
-                "https://pre02.mafiaminer.io:8085"));
+                "http://mafiaminer.xyz:8085",
+                "https://mafiaminer.xyz",
+                "https://pre01.mafiaminer.xyz",
+                "http://pre01.mafiaminer.xyz:8085",
+                "https://pre02.mafiaminer.xyz",
+                "https://pre02.mafiaminer.xyz:8085"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
