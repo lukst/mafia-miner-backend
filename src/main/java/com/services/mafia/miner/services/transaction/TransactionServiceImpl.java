@@ -1,9 +1,11 @@
 package com.services.mafia.miner.services.transaction;
 
+import com.services.mafia.miner.dto.game.TotalStatsDTO;
 import com.services.mafia.miner.dto.transaction.TransactionDTO;
 import com.services.mafia.miner.entity.transaction.Transaction;
 import com.services.mafia.miner.entity.transaction.TransactionType;
 import com.services.mafia.miner.entity.user.User;
+import com.services.mafia.miner.repository.nft.NFTRepository;
 import com.services.mafia.miner.repository.transaction.TransactionRepository;
 import com.services.mafia.miner.repository.user.UserRepository;
 import com.services.mafia.miner.services.user.UserService;
@@ -23,6 +25,8 @@ import java.time.LocalDateTime;
 @Service
 @AllArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
+    private final NFTRepository nftRepository;
+    private final UserRepository userRepository;
     private final TransactionRepository transactionRepository;
     private final UserService userService;
     private final ModelMapper modelMapper;
@@ -61,5 +65,14 @@ public class TransactionServiceImpl implements TransactionService {
         transactionRecord.setMcoin(mcoin.setScale(5, RoundingMode.HALF_UP));
         transactionRecord.setOperation(operation);
         transactionRepository.save(transactionRecord);
+    }
+
+    @Override
+    public TotalStatsDTO getTotalStats() {
+        return TotalStatsDTO.builder()
+                .totalDeposit(userRepository.sumTotalDeposit())
+                .totalUsers(userRepository.findAll().size())
+                .totalNfts(nftRepository.findAll().size())
+                .build();
     }
 }

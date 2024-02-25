@@ -46,7 +46,8 @@ public class SecurityConfiguration {
                                 mvc.pattern("/configuration/ui"),
                                 mvc.pattern("/configuration/security"),
                                 mvc.pattern("/webjars/**"),
-                                mvc.pattern("/api/v1/images/**")).permitAll()
+                                mvc.pattern("/api/v1/images/**"),
+                                mvc.pattern("/api/v1/game/**")).permitAll()
                         .anyRequest().authenticated()
                 )
                 .cors().configurationSource(corsConfigurationSource())
