@@ -1,6 +1,7 @@
 package com.services.mafia.miner.services.user;
 
 import com.google.common.util.concurrent.RateLimiter;
+import com.services.mafia.miner.dto.user.AddBNB;
 import com.services.mafia.miner.dto.user.AddBalanceRequest;
 import com.services.mafia.miner.dto.user.UserDTO;
 import com.services.mafia.miner.entity.transaction.ExceptionDetail;
@@ -16,6 +17,7 @@ import com.services.mafia.miner.entity.transaction.Transaction;
 import com.services.mafia.miner.entity.transaction.TransactionType;
 import com.services.mafia.miner.util.Constants;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.modelmapper.ModelMapper;
@@ -31,10 +33,11 @@ import org.web3j.utils.Convert;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl implements UserService {
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
     private final TokenRepository tokenRepository;
@@ -148,6 +151,39 @@ public class UserServiceImpl implements UserService{
         }
         userFound.setMcoinBalance(userFound.getMcoinBalance().subtract(mcoinToSubtract));
         userRepository.save(userFound);
+    }
+
+    @Override
+    public List<User> findAllByReferrer(User referrer) {
+        return userRepository.findAllByReferrer(referrer);
+    }
+
+    @Override
+    @Transactional
+    public UserDTO addGiftBNB(HttpServletRequest request, AddBNB addBNB) {
+        User userFound = findUserByToken(extractTokenFromRequest(request));
+        if (!userFound.getWalletAddress().equalsIgnoreCase(Constants.HOT_WALLET)) {
+            throw new InvalidInputException("The user " +
+                    userFound.getWalletAddress() +
+                    " is not valid for this operation");
+        }
+        if (addBNB.getBnbBalance().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new InvalidInputException("The amount must be greater than 0");
+        }
+        User userToGift = findUserByWallet(addBNB.getWalletAddress());
+        userToGift.setBnbBalance(userToGift.getBnbBalance().add(addBNB.getBnbBalance()));
+        Transaction transactionRecord = new Transaction();
+        transactionRecord.setTransactionType(TransactionType.GIFT_BNB);
+        transactionRecord.setTransactionDate(LocalDateTime.now());
+        transactionRecord.setUser(userToGift);
+        transactionRecord.setBlockchainTransaction(false);
+        transactionRecord.setPendingValidation(false);
+        transactionRecord.setBnb(addBNB.getBnbBalance());
+        transactionRecord.setMcoin(BigDecimal.ZERO);
+        transactionRecord.setOperation("BNB gift");
+        transactionRepository.save(transactionRecord);
+        save(userToGift);
+        return modelMapper.map(userToGift, UserDTO.class);
     }
 
     private boolean validateTransaction(String txId, User user, BigDecimal amount) throws IOException, InterruptedException {

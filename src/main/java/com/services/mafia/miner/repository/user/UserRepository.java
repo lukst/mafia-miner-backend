@@ -15,4 +15,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByReferralCode(String referralCode);
     @Query("SELECT SUM(u.totalDeposit) FROM User u")
     BigDecimal sumTotalDeposit();
+    List<User> findAllByReferrer(User referrer);
 }

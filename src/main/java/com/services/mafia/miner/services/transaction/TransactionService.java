@@ -1,6 +1,7 @@
 package com.services.mafia.miner.services.transaction;
 
 import com.services.mafia.miner.dto.game.TotalStatsDTO;
+import com.services.mafia.miner.dto.transaction.ReferralHistoryDTO;
 import com.services.mafia.miner.dto.transaction.TransactionDTO;
 import com.services.mafia.miner.entity.transaction.TransactionType;
 import com.services.mafia.miner.entity.user.User;
@@ -8,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface TransactionService {
     Page<TransactionDTO> filterTransactionsForUser(HttpServletRequest request, int page, int size);
@@ -15,4 +17,5 @@ public interface TransactionService {
     void saveTransactionRecordMCOIN(TransactionType transactionType, User userFound, BigDecimal mcoin, String operation);
     TotalStatsDTO getTotalStats();
     Page<TransactionDTO> getAllTransactionsForUser(String wallet, int page, int size);
+    List<ReferralHistoryDTO> getAllReferalHistoryForUser(HttpServletRequest request);
 }

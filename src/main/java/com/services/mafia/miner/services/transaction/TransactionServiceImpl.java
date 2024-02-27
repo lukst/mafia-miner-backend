@@ -1,6 +1,7 @@
 package com.services.mafia.miner.services.transaction;
 
 import com.services.mafia.miner.dto.game.TotalStatsDTO;
+import com.services.mafia.miner.dto.transaction.ReferralHistoryDTO;
 import com.services.mafia.miner.dto.transaction.TransactionDTO;
 import com.services.mafia.miner.entity.transaction.Transaction;
 import com.services.mafia.miner.entity.transaction.TransactionType;
@@ -9,6 +10,7 @@ import com.services.mafia.miner.repository.nft.NFTRepository;
 import com.services.mafia.miner.repository.transaction.TransactionRepository;
 import com.services.mafia.miner.repository.user.UserRepository;
 import com.services.mafia.miner.services.user.UserService;
+import com.services.mafia.miner.util.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -84,5 +87,32 @@ public class TransactionServiceImpl implements TransactionService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("transactionDate").descending());
         Page<Transaction> allTransactionsForUser = transactionRepository.findAllByUser(user, pageable);
         return allTransactionsForUser.map(transaction -> modelMapper.map(transaction, TransactionDTO.class));
+    }
+
+    @Override
+    public List<ReferralHistoryDTO> getAllReferalHistoryForUser(HttpServletRequest request) {
+        User userFound = userService.findUserByToken(userService.extractTokenFromRequest(request));
+        List<ReferralHistoryDTO> referralHistoryDTOS = new ArrayList<>();
+        List<User> referees = userService.findAllByReferrer(userFound);
+        for (User referrer : referees) {
+            List<Transaction> mintedNFTsBNB = transactionRepository.findByTransactionTypeAndUser(TransactionType.MINT_NFT_BNB, referrer);
+            BigDecimal referralAmountBNB = mintedNFTsBNB.stream()
+                    .map(Transaction::getBnb)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .abs()
+                    .multiply(Constants.REFERRAL_FEE_PERCENT);
+            List<Transaction> mintedNFTsMCOIN = transactionRepository.findByTransactionTypeAndUser(TransactionType.MINT_NFT_MCOIN, referrer);
+            BigDecimal referralAmountMCOIN = mintedNFTsMCOIN.stream()
+                    .map(Transaction::getMcoin)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    .abs()
+                    .multiply(Constants.REFERRAL_FEE_PERCENT);
+            BigDecimal totalReferralAmount = referralAmountBNB.add(referralAmountMCOIN).setScale(5, RoundingMode.HALF_UP);
+            referralHistoryDTOS.add(ReferralHistoryDTO.builder()
+                    .walletAddress(referrer.getWalletAddress())
+                    .referralAmount(totalReferralAmount)
+                    .build());
+        }
+        return referralHistoryDTOS;
     }
 }

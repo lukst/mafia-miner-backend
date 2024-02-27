@@ -41,10 +41,10 @@ public class User implements UserDetails {
     private List<Token> tokens;
     @Column(nullable = false, precision = 19, scale = 5)
     @Builder.Default
-    private BigDecimal bnbBalance = new BigDecimal("10").setScale(5, RoundingMode.HALF_UP);
+    private BigDecimal bnbBalance = new BigDecimal("0").setScale(5, RoundingMode.HALF_UP);
     @Column(nullable = false, precision = 19, scale = 5)
     @Builder.Default
-    private BigDecimal mcoinBalance = new BigDecimal("10").setScale(5, RoundingMode.HALF_UP);
+    private BigDecimal mcoinBalance = new BigDecimal("0").setScale(5, RoundingMode.HALF_UP);
     @Column(nullable = false, precision = 19, scale = 5)
     @Builder.Default
     private BigDecimal totalDeposit = new BigDecimal("0").setScale(5, RoundingMode.HALF_UP);
