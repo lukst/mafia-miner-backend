@@ -1,13 +1,16 @@
 package com.services.mafia.miner.services.strongbox;
 
 import com.services.mafia.miner.dto.strongbox.StrongboxGameDTO;
+import com.services.mafia.miner.dto.strongbox.StrongboxHistoryDTO;
 import com.services.mafia.miner.entity.strongbox.Combination;
 import com.services.mafia.miner.entity.strongbox.StrongBoxGame;
+import com.services.mafia.miner.entity.strongbox.StrongboxHistory;
 import com.services.mafia.miner.entity.transaction.TransactionType;
 import com.services.mafia.miner.entity.user.User;
 import com.services.mafia.miner.exception.InvalidInputException;
 import com.services.mafia.miner.repository.strongbox.CombinationRepository;
 import com.services.mafia.miner.repository.strongbox.StrongBoxGameRepository;
+import com.services.mafia.miner.repository.strongbox.StrongboxHistoryRepository;
 import com.services.mafia.miner.services.RateLimitingCacheService;
 import com.services.mafia.miner.services.transaction.TransactionService;
 import com.services.mafia.miner.services.user.UserService;
@@ -19,11 +22,15 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
 public class StrongBoxGameServiceImpl implements StrongBoxGameService {
     private final StrongBoxGameRepository strongBoxGameRepository;
+    private final StrongboxHistoryRepository strongboxHistoryRepository;
     private final CombinationRepository combinationRepository;
     private final UserService userService;
     private final TransactionService transactionService;
@@ -43,9 +50,13 @@ public class StrongBoxGameServiceImpl implements StrongBoxGameService {
     public StrongboxGameDTO play(HttpServletRequest request, Long strongboxId, Long combinationId) {
         User user = userService.findUserByToken(userService.extractTokenFromRequest(request));
         rateLimitingCacheService.checkRateLimit(user.getId(), 1);
-
+        StrongBoxGame lastStrongBoxGame = strongBoxGameRepository.findTopByOrderByLastResetTimeDesc()
+                .orElseThrow(() -> new InvalidInputException("No strongbox game found"));
         StrongBoxGame strongBoxGame = strongBoxGameRepository.findById(strongboxId).orElseThrow(() ->
                 new InvalidInputException("No strongbox found"));
+        if(!lastStrongBoxGame.getId().equals(strongBoxGame.getId())){
+            throw new InvalidInputException("This strongbox is already closed");
+        }
         if(strongBoxGame.getAttemptsCount() == 80){
             throw new InvalidInputException("This strongbox is already closed");
         }
@@ -64,6 +75,15 @@ public class StrongBoxGameServiceImpl implements StrongBoxGameService {
         boolean userWon = false;
         if (strongBoxGame.getWinningCombination() == combination.getNumber()) {
             winningPrice = playPrice.multiply(BigDecimal.valueOf(strongBoxGame.getCurrentMultiplier()));
+            StrongboxHistory strongboxHistory = StrongboxHistory.builder()
+                    .user(user)
+                    .game(strongBoxGame)
+                    .winningCombination(combination.getNumber())
+                    .winningMultiplier(strongBoxGame.getCurrentMultiplier())
+                    .winAmount(winningPrice)
+                    .winTime(LocalDateTime.now())
+                    .build();
+            strongboxHistoryRepository.save(strongboxHistory);
             user.setMcoinBalance(user.getMcoinBalance().add(winningPrice));
             transactionService.saveTransactionRecordMCOIN(
                     TransactionType.MINT_NFT_MCOIN,
@@ -93,6 +113,18 @@ public class StrongBoxGameServiceImpl implements StrongBoxGameService {
         dtoResponse.setWon(userWon);
         dtoResponse.setMcoinWon(winningPrice);
         return dtoResponse;
+    }
+
+    @Override
+    public List<StrongboxHistoryDTO> getLast5StrongboxHistory() {
+        List<StrongboxHistory> strongboxHistories = strongboxHistoryRepository.findTop5ByOrderByWinTimeDesc();
+        List<StrongboxHistoryDTO> responseStrongBoxHistory = new ArrayList<>();
+        for (StrongboxHistory strongboxHistory: strongboxHistories) {
+            StrongboxHistoryDTO response = modelMapper.map(strongboxHistory, StrongboxHistoryDTO.class);
+            response.setWinningWallet(strongboxHistory.getUser().getWalletAddress());
+            responseStrongBoxHistory.add(response);
+        }
+        return responseStrongBoxHistory;
     }
 
     private StrongBoxGame generateStrongboxGame() {

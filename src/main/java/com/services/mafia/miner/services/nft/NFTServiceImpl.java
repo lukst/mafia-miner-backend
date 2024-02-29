@@ -48,7 +48,7 @@ public class NFTServiceImpl implements NFTService {
         boolean isDeveloperWallet = userFound.getWalletAddress().equalsIgnoreCase(Constants.DEVELOPER_WALLET);
         User referralUser = userFound.getReferrer();
         NFTCatalog nftCatalog = nftCatalogRepository.findById(catalogID).orElseThrow(() -> new InvalidInputException("Catalog does not exist"));
-        if (nftCatalog.getType() == NFTType.FREE){
+        if (nftCatalog.getType() == NFTType.FREE) {
             throw new InvalidInputException("Nice try, thanks for helping us improve our security");
         }
         BigDecimal mintPrice;

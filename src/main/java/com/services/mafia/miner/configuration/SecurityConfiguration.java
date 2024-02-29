@@ -72,10 +72,8 @@ public class SecurityConfiguration {
                 "http://localhost",
                 "http://mafiaminer.xyz:8085",
                 "https://mafiaminer.xyz",
-                "https://pre01.mafiaminer.xyz",
-                "http://pre01.mafiaminer.xyz:8085",
-                "https://pre02.mafiaminer.xyz",
-                "https://pre02.mafiaminer.xyz:8085"));
+                "https://eskizo01.mafiaminer.xyz",
+                "https://eskizo01.mafiaminer.xyz:8085"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));

@@ -17,6 +17,9 @@ import com.services.mafia.miner.repository.user.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,25 +36,35 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final TokenRepository tokenRepository;
     private final NFTRepository nftRepository;
     private final NFTCatalogRepository nftCatalogRepository;
+    private final LoginAttemptService loginAttemptService;
 
     @Override
     @Transactional
     public AuthenticationResponse authenticateUser(HttpServletRequest request, AuthenticationRequest authenticationRequest) {
+        String ip = extractIp(request);
+        if (loginAttemptService.isBlocked(authenticationRequest.getUserAddress())) {
+            throw new AuthenticationServiceException("Too many failed login attempts. Please try again later.");
+        }
         String userAddress = authenticationRequest.getUserAddress();
         String signature = authenticationRequest.getSignature();
         Nonce nonce = nonceRepository.findById(userAddress)
-                .orElseThrow(() -> new InvalidInputException("Nonce not found"));
+                .orElseThrow(() -> {
+                    loginAttemptService.loginFailed(userAddress, ip);
+                    return new InvalidInputException("Nonce not found " + userAddress + " " + ip);
+                });
         boolean isVerified = metamaskAuthService.verifySignature(userAddress.toLowerCase(), nonce.getNonce(), signature);
         if (!isVerified) {
-            throw new InvalidInputException("Invalid signature");
+            loginAttemptService.loginFailed(userAddress, ip);
+            throw new InvalidInputException("Invalid signature for user " + userAddress + " with ip " + ip);
         }
         var user = userRepository.findByWalletAddress(userAddress)
                 .orElseGet(() -> registerUser(authenticationRequest, request));
+
+        loginAttemptService.loginSucceeded(authenticationRequest.getUserAddress());
         nonceRepository.delete(nonce);
         revokeAllUserTokens(user);
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
-        String ip = extractIp(request);
         saveUserToken(user, jwtToken);
         user.getIpAddresses().add(ip);
         userRepository.save(user);

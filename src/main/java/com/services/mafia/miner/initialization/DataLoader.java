@@ -23,8 +23,8 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        //createNFTCatalog();
-        //generateFirstStrongboxGame();
+        createNFTCatalog();
+        generateFirstStrongboxGame();
     }
 
     private void generateFirstStrongboxGame() {
