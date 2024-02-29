@@ -1,16 +1,15 @@
 package com.services.mafia.miner.services.nft;
 
 import com.services.mafia.miner.dto.nft.NFTDTO;
-import com.services.mafia.miner.dto.transaction.TransactionDTO;
 import com.services.mafia.miner.entity.nft.FarmType;
 import com.services.mafia.miner.entity.nft.NFT;
 import com.services.mafia.miner.entity.nft.NFTCatalog;
-import com.services.mafia.miner.entity.transaction.Transaction;
 import com.services.mafia.miner.entity.transaction.TransactionType;
 import com.services.mafia.miner.entity.user.User;
 import com.services.mafia.miner.exception.InvalidInputException;
 import com.services.mafia.miner.repository.nft.NFTCatalogRepository;
 import com.services.mafia.miner.repository.nft.NFTRepository;
+import com.services.mafia.miner.services.RateLimitingCacheService;
 import com.services.mafia.miner.services.transaction.TransactionService;
 import com.services.mafia.miner.services.user.UserService;
 import com.services.mafia.miner.util.Constants;
@@ -21,7 +20,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -38,6 +36,7 @@ public class NFTServiceImpl implements NFTService {
     private final NFTRepository nftRepository;
     private final NFTCatalogRepository nftCatalogRepository;
     private final ModelMapper modelMapper;
+    private final RateLimitingCacheService rateLimitingCacheService;
     private final Random random = new Random();
 
     @Override
@@ -54,6 +53,7 @@ public class NFTServiceImpl implements NFTService {
         } else {
             mintPrice = nftCatalog.getMcoinCost();
         }
+        rateLimitingCacheService.checkRateLimit(userFound.getId(), 1);
         BigDecimal developerFee = nftCatalog.getBnbCost().multiply(Constants.NFT_FEE);
         handleReferrer(bnbMint, referralUser, mintPrice);
         if (!isHotWallet && !isDeveloperWallet) {
@@ -64,6 +64,14 @@ public class NFTServiceImpl implements NFTService {
                         userFound,
                         mintPrice.negate(),
                         Constants.MINT_NFT_OPERATION + " " + nftCatalog.getName());
+                User developerUser = userService.findUserByWallet(Constants.DEVELOPER_WALLET);
+                developerUser.setMcoinBalance(developerUser.getMcoinBalance().add(developerFee));
+                userService.save(developerUser);
+                transactionService.saveTransactionRecordMCOIN(
+                        TransactionType.MINT_NFT_BNB_FEE,
+                        developerUser,
+                        developerFee,
+                        Constants.MINT_NFT_OPERATION + " " + nftCatalog.getName());
             } else {
                 userService.subtractUserMCOIN(userFound, mintPrice);
                 transactionService.saveTransactionRecordMCOIN(
@@ -72,14 +80,6 @@ public class NFTServiceImpl implements NFTService {
                         mintPrice.negate(),
                         Constants.MINT_NFT_OPERATION + " " + nftCatalog.getName());
             }
-            User developerUser = userService.findUserByWallet(Constants.DEVELOPER_WALLET);
-            developerUser.setMcoinBalance(developerUser.getMcoinBalance().add(developerFee));
-            userService.save(developerUser);
-            transactionService.saveTransactionRecordMCOIN(
-                    TransactionType.MINT_NFT_BNB_FEE,
-                    developerUser,
-                    developerFee,
-                    Constants.MINT_NFT_OPERATION + " " + nftCatalog.getName());
         } else {
             userService.save(userFound);
         }
@@ -108,6 +108,7 @@ public class NFTServiceImpl implements NFTService {
     @Transactional
     public NFTDTO play(HttpServletRequest request, Long nftId) {
         User user = userService.findUserByToken(userService.extractTokenFromRequest(request));
+        rateLimitingCacheService.checkRateLimit(user.getId(), 1);
         NFT nft = nftRepository.findById(nftId).orElseThrow(() -> new InvalidInputException("NFT does not exist"));
         LocalDateTime now = LocalDateTime.now();
         if (nft.getAvailableMiningDays() <= 0) {

@@ -18,7 +18,6 @@ import java.util.Optional;
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     Page<Transaction> findAllByUser(User user, Pageable pageable);
     Optional<Transaction> findByTxId(String txId);
-    List<Transaction> findByUser(User user);
     List<Transaction> findByIsPendingValidationAndTransactionType(boolean pendingValidation, TransactionType transactionType);
     @Query("SELECT t FROM Transaction t WHERE t.isPendingValidation = true AND t.transactionType <> :excludedTransactionType")
     List<Transaction> findByIsPendingValidationAndNotType(@Param("excludedTransactionType") TransactionType excludedTransactionType);

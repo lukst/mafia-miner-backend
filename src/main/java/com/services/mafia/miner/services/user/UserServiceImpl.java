@@ -53,6 +53,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public String extractTokenFromRequest(HttpServletRequest request) {
         final String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -62,6 +63,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public User findUserByToken(String token) {
         Token tokenFound = tokenRepository.findByTokenAndExpiredIsFalseAndRevokedIsFalse(token)
                 .orElseThrow(() -> new InvalidTokenException("Token is not valid or expired"));
@@ -70,6 +72,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public User findUserByWallet(String wallet) {
         return userRepository.findByWalletAddress(wallet).orElseThrow(() -> new InvalidInputException("User with wallet " + wallet + " not found"));
     }
@@ -131,11 +134,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public User save(User user) {
         return userRepository.save(user);
     }
 
     @Override
+    @Transactional
     public void subtractUserBNB(User userFound, BigDecimal bnbToSubtract) {
         if (userFound.getBnbBalance().compareTo(bnbToSubtract) < 0) {
             throw new UserWithNoBalanceException("Not enough BNB");
@@ -145,6 +150,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void subtractUserMCOIN(User userFound, BigDecimal mcoinToSubtract) {
         if (userFound.getMcoinBalance().compareTo(mcoinToSubtract) < 0) {
             throw new UserWithNoBalanceException("Not enough MCOIN");
@@ -172,15 +178,18 @@ public class UserServiceImpl implements UserService {
         }
         User userToGift = findUserByWallet(addBNB.getWalletAddress());
         userToGift.setBnbBalance(userToGift.getBnbBalance().add(addBNB.getBnbBalance()));
-        Transaction transactionRecord = new Transaction();
-        transactionRecord.setTransactionType(TransactionType.GIFT_BNB);
-        transactionRecord.setTransactionDate(LocalDateTime.now());
-        transactionRecord.setUser(userToGift);
-        transactionRecord.setBlockchainTransaction(false);
-        transactionRecord.setPendingValidation(false);
-        transactionRecord.setBnb(addBNB.getBnbBalance());
-        transactionRecord.setMcoin(BigDecimal.ZERO);
-        transactionRecord.setOperation("BNB gift");
+        Transaction transactionRecord = Transaction.builder()
+                .user(userToGift)
+                .transactionType(TransactionType.GIFT_BNB)
+                .objectType(ObjectType.USER)
+                .objectId(userToGift.getId())
+                .bnb(addBNB.getBnbBalance())
+                .mcoin(BigDecimal.ZERO)
+                .operation("BNB gift")
+                .transactionDate(LocalDateTime.now())
+                .isPendingValidation(false)
+                .isBlockchainTransaction(false)
+                .build();
         transactionRepository.save(transactionRecord);
         save(userToGift);
         return modelMapper.map(userToGift, UserDTO.class);

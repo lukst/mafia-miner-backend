@@ -12,6 +12,7 @@ import com.services.mafia.miner.repository.user.UserRepository;
 import com.services.mafia.miner.services.user.UserService;
 import com.services.mafia.miner.util.Constants;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -45,6 +46,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional
     public void saveTransactionRecordBNB(TransactionType transactionType, User userFound, BigDecimal bnb, String operation) {
         Transaction transactionRecord = new Transaction();
         transactionRecord.setTransactionType(transactionType);
@@ -59,6 +61,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional
     public void saveTransactionRecordMCOIN(TransactionType transactionType, User userFound, BigDecimal mcoin, String operation) {
         Transaction transactionRecord = new Transaction();
         transactionRecord.setTransactionType(transactionType);
