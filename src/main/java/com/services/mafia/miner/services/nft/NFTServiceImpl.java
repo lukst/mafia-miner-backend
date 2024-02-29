@@ -4,6 +4,7 @@ import com.services.mafia.miner.dto.nft.NFTDTO;
 import com.services.mafia.miner.entity.nft.FarmType;
 import com.services.mafia.miner.entity.nft.NFT;
 import com.services.mafia.miner.entity.nft.NFTCatalog;
+import com.services.mafia.miner.entity.nft.NFTType;
 import com.services.mafia.miner.entity.transaction.TransactionType;
 import com.services.mafia.miner.entity.user.User;
 import com.services.mafia.miner.exception.InvalidInputException;
@@ -47,6 +48,9 @@ public class NFTServiceImpl implements NFTService {
         boolean isDeveloperWallet = userFound.getWalletAddress().equalsIgnoreCase(Constants.DEVELOPER_WALLET);
         User referralUser = userFound.getReferrer();
         NFTCatalog nftCatalog = nftCatalogRepository.findById(catalogID).orElseThrow(() -> new InvalidInputException("Catalog does not exist"));
+        if (nftCatalog.getType() == NFTType.FREE){
+            throw new InvalidInputException("Nice try, thanks for helping us improve our security");
+        }
         BigDecimal mintPrice;
         if (bnbMint) {
             mintPrice = nftCatalog.getBnbCost();

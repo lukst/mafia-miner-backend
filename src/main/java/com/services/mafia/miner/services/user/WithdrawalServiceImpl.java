@@ -128,7 +128,7 @@ public class WithdrawalServiceImpl implements WithdrawalService {
         User userFound = userService.findUserByToken(token);
         Transaction transaction = validateUser(withdrawalValidationDTO, userFound);
         transaction.setPendingValidation(false);
-        transaction.setTxId(withdrawalValidationDTO.getTxId());
+        transaction.setOperation(withdrawalValidationDTO.getTxId());
         transactionRepository.save(transaction);
     }
 

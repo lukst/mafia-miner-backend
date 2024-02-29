@@ -2,7 +2,9 @@ package com.services.mafia.miner.initialization;
 
 import com.services.mafia.miner.entity.nft.NFTCatalog;
 import com.services.mafia.miner.entity.nft.NFTType;
+import com.services.mafia.miner.entity.strongbox.StrongBoxGame;
 import com.services.mafia.miner.repository.nft.NFTCatalogRepository;
+import com.services.mafia.miner.repository.strongbox.StrongBoxGameRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -17,11 +19,22 @@ import java.util.ArrayList;
 @Slf4j
 public class DataLoader implements CommandLineRunner {
     private final NFTCatalogRepository nftCatalogRepository;
-
+    private final StrongBoxGameRepository strongBoxGameRepository;
 
     @Override
     public void run(String... args) {
-        createNFTCatalog();
+        //createNFTCatalog();
+        //generateFirstStrongboxGame();
+    }
+
+    private void generateFirstStrongboxGame() {
+        if (strongBoxGameRepository.findAll().isEmpty()) {
+            StrongBoxGame game = StrongBoxGame.builder()
+                    .winningCombination((int) (Math.random() * 100))
+                    .build();
+            game.initializeCombinations();
+            strongBoxGameRepository.save(game);
+        }
     }
 
     private void createNFTCatalog() {
@@ -33,8 +46,8 @@ public class DataLoader implements CommandLineRunner {
                     .nfts(new ArrayList<>())
                     .bnbCost(BigDecimal.ZERO)
                     .mcoinCost(BigDecimal.ZERO)
-                    .minFarmDays(60)
-                    .maxFarmDays(60)
+                    .minFarmDays(50)
+                    .maxFarmDays(50)
                     .dailyFarm(new BigDecimal("0.0012").setScale(5, RoundingMode.HALF_UP))
                     .build());
             nftCatalogRepository.save(NFTCatalog.builder()

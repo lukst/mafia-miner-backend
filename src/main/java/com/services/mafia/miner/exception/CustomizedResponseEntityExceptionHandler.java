@@ -53,7 +53,7 @@ public class CustomizedResponseEntityExceptionHandler extends ResponseEntityExce
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public final ResponseEntity<ErrorDetails> handleOptimisticLockingFailureException(ObjectOptimisticLockingFailureException ex, WebRequest request) {
-        String errorMessage = "Row was updated or deleted";
+        String errorMessage = "Someone else is first than you, try again later.";
         ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), errorMessage, errorMessage);
         log.error(ex.getMessage());
         return new ResponseEntity<>(errorDetails, HttpStatus.NOT_ACCEPTABLE);
