@@ -126,14 +126,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             userRepository.findByReferralCode(authenticationRequest.getReferralCode()).ifPresent(user::setReferrer);
         }
         var savedUser = userRepository.save(user);
-        NFTCatalog nftCatalog = nftCatalogRepository.findNftCatalogByType(NFTType.FREE).orElseThrow(() -> new InvalidInputException("Catalog does not exist"));
-        nftRepository.save(NFT.builder()
-                .user(user)
-                .nftCatalog(nftCatalog)
-                .farmType(FarmType.BNB)
-                .availableMiningDays(50)
-                .maxMiningDays(50)
-                .build());
         ipGeolocationService.getCountryByIp(ip).thenAccept(country -> {
             user.setCountry(country);
             userRepository.save(user);
