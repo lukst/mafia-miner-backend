@@ -22,7 +22,7 @@ public class StrongBoxGame extends BaseEntity {
     private int currentMultiplier = 90;
     @Column(nullable = false, precision = 19, scale = 3)
     @Builder.Default
-    private BigDecimal attemptCost = new BigDecimal("0.002").setScale(3, RoundingMode.HALF_UP);
+    private BigDecimal attemptCost = new BigDecimal("0.001").setScale(3, RoundingMode.HALF_UP);
     @Column(nullable = false)
     @Builder.Default
     private int attemptsCount = 0;
@@ -51,7 +51,7 @@ public class StrongBoxGame extends BaseEntity {
 
     public void resetGame() {
         this.attemptsCount = 0;
-        this.currentMultiplier = 95;
+        this.currentMultiplier = 90;
         this.lastResetTime = LocalDateTime.now();
         this.winningCombination = generateWinningCombination();
         for (Combination combination : this.combinations) {

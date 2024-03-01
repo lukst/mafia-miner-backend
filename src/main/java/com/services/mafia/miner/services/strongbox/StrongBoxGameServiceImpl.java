@@ -57,7 +57,7 @@ public class StrongBoxGameServiceImpl implements StrongBoxGameService {
         if(!lastStrongBoxGame.getId().equals(strongBoxGame.getId())){
             throw new InvalidInputException("This strongbox is already closed");
         }
-        if(strongBoxGame.getAttemptsCount() == 80){
+        if(strongBoxGame.getCurrentMultiplier() <= 15){
             throw new InvalidInputException("This strongbox is already closed");
         }
         Combination combination = strongBoxGame.getCombinations().stream()
@@ -66,9 +66,6 @@ public class StrongBoxGameServiceImpl implements StrongBoxGameService {
                 .orElseThrow(() -> new InvalidInputException("Invalid or already attempted combination"));
 
         BigDecimal playPrice = strongBoxGame.getAttemptCost();
-
-        User developerUser = userService.findUserByWallet(Constants.DEVELOPER_WALLET);
-        userService.save(developerUser);
         userService.subtractUserMCOIN(user, playPrice);
         StrongBoxGame responseStrongbox;
         BigDecimal winningPrice = BigDecimal.ZERO;
@@ -86,7 +83,7 @@ public class StrongBoxGameServiceImpl implements StrongBoxGameService {
             strongboxHistoryRepository.save(strongboxHistory);
             user.setMcoinBalance(user.getMcoinBalance().add(winningPrice));
             transactionService.saveTransactionRecordMCOIN(
-                    TransactionType.MINT_NFT_MCOIN,
+                    TransactionType.WIN_STRONGBOX,
                     user,
                     winningPrice,
                     Constants.STRONGBOX_ATTEMPT + " with number " + combination.getNumber() + " won!");
@@ -95,7 +92,7 @@ public class StrongBoxGameServiceImpl implements StrongBoxGameService {
             userService.save(user);
         } else {
             transactionService.saveTransactionRecordMCOIN(
-                    TransactionType.MINT_NFT_MCOIN,
+                    TransactionType.PLAY_STRONGBOX,
                     user,
                     playPrice.negate(),
                     Constants.STRONGBOX_ATTEMPT + " with number " + combination.getNumber() + " failed");
@@ -104,7 +101,7 @@ public class StrongBoxGameServiceImpl implements StrongBoxGameService {
         combination.setAttempted(true);
         strongBoxGame.setCurrentMultiplier(strongBoxGame.getCurrentMultiplier() - 1);
         strongBoxGame.setAttemptsCount(strongBoxGame.getAttemptsCount() + 1);
-        if(responseStrongbox.getCurrentMultiplier() <= 20 && strongBoxGame.getWinningCombination() != combination.getNumber()){
+        if(responseStrongbox.getCurrentMultiplier() <= 15 && strongBoxGame.getWinningCombination() != combination.getNumber()){
             responseStrongbox.resetGame();
         }
         StrongBoxGame updatedGame = strongBoxGameRepository.save(responseStrongbox);

@@ -8,5 +8,7 @@ public enum TransactionType {
     MINT_NFT_BNB_FEE,
     NFT_REWARD,
     DEVELOPER_FEE_WITHDRAW,
-    GIFT_BNB
+    GIFT_BNB,
+    PLAY_STRONGBOX,
+    WIN_STRONGBOX
 }
