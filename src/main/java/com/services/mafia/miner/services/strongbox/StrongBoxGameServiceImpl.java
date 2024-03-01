@@ -18,6 +18,7 @@ import com.services.mafia.miner.util.Constants;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +29,7 @@ import java.util.List;
 
 @Service
 @AllArgsConstructor
+@Log4j2
 public class StrongBoxGameServiceImpl implements StrongBoxGameService {
     private final StrongBoxGameRepository strongBoxGameRepository;
     private final StrongboxHistoryRepository strongboxHistoryRepository;
@@ -64,13 +66,13 @@ public class StrongBoxGameServiceImpl implements StrongBoxGameService {
                 .filter(c -> c.getId().equals(combinationId) && !c.isAttempted())
                 .findFirst()
                 .orElseThrow(() -> new InvalidInputException("Invalid or already attempted combination"));
-
         BigDecimal playPrice = strongBoxGame.getAttemptCost();
         userService.subtractUserMCOIN(user, playPrice);
         StrongBoxGame responseStrongbox;
         BigDecimal winningPrice = BigDecimal.ZERO;
         boolean userWon = false;
         if (strongBoxGame.getWinningCombination() == combination.getNumber()) {
+            log.info("User " + user.getWalletAddress() + " won the strongbox with combination " + combination.getNumber());
             winningPrice = playPrice.multiply(BigDecimal.valueOf(strongBoxGame.getCurrentMultiplier()));
             StrongboxHistory strongboxHistory = StrongboxHistory.builder()
                     .user(user)
@@ -91,6 +93,7 @@ public class StrongBoxGameServiceImpl implements StrongBoxGameService {
             userWon = true;
             userService.save(user);
         } else {
+            log.info("User " + user.getWalletAddress() + " play strongbox with combination " + combination.getNumber());
             transactionService.saveTransactionRecordMCOIN(
                     TransactionType.PLAY_STRONGBOX,
                     user,
