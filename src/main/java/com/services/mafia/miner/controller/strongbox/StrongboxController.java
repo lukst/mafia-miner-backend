@@ -16,7 +16,6 @@ import java.util.List;
 @AllArgsConstructor
 @RequestMapping("/api/v1/strongbox")
 public class StrongboxController {
-
     private final StrongBoxGameService strongBoxGameService;
 
     @PostMapping("/play/{strongboxId}/{combinationId}")

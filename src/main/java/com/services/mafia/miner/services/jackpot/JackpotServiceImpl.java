@@ -67,6 +67,7 @@ public class JackpotServiceImpl implements JackpotService {
         userService.subtractUserMCOIN(user, jackpotEntryPrice);
         transactionService.saveTransactionRecordMCOIN(TransactionType.JACKPOT_ENTRY, user, jackpotEntryPrice.negate(), Constants.PLAY_JACKPOT_OPERATION);
         JackpotRewardType result = null;
+        log.info("User " + user.getWalletAddress() + " " + winningCategory.getRewardType() + " number " + generatedNumber);
         switch (winningCategory.getRewardType()) {
             case NOTHING -> {
                 Jackpot updatedJackpot = findByIdWithLock(jackpot.getId());
@@ -78,7 +79,6 @@ public class JackpotServiceImpl implements JackpotService {
             }
             case X1point5 -> {
                 Jackpot updatedJackpot = findByIdWithLock(jackpot.getId());
-                updatedJackpot.setCurrentAmount(updatedJackpot.getCurrentAmount().add(jackpotEntryPrice.multiply(new BigDecimal("0.5"))));
                 updatedJackpot.setLastUpdated(LocalDateTime.now());
                 jackpotRepository.save(updatedJackpot);
                 BigDecimal amountWon = jackpotEntryPrice.multiply(new BigDecimal("1.5"));
@@ -96,7 +96,6 @@ public class JackpotServiceImpl implements JackpotService {
             }
             case X2 -> {
                 Jackpot updatedJackpot = findByIdWithLock(jackpot.getId());
-                updatedJackpot.setCurrentAmount(updatedJackpot.getCurrentAmount().add(jackpotEntryPrice.multiply(new BigDecimal("0.5"))));
                 updatedJackpot.setLastUpdated(LocalDateTime.now());
                 jackpotRepository.save(updatedJackpot);
                 BigDecimal amountWon = jackpotEntryPrice.multiply(new BigDecimal("2"));
@@ -114,7 +113,6 @@ public class JackpotServiceImpl implements JackpotService {
             }
             case X3 -> {
                 Jackpot updatedJackpot = findByIdWithLock(jackpot.getId());
-                updatedJackpot.setCurrentAmount(updatedJackpot.getCurrentAmount().add(jackpotEntryPrice.multiply(new BigDecimal("0.5"))));
                 updatedJackpot.setLastUpdated(LocalDateTime.now());
                 jackpotRepository.save(updatedJackpot);
                 BigDecimal amountWon = jackpotEntryPrice.multiply(new BigDecimal("3"));
@@ -132,7 +130,6 @@ public class JackpotServiceImpl implements JackpotService {
             }
             case X5 -> {
                 Jackpot updatedJackpot = findByIdWithLock(jackpot.getId());
-                updatedJackpot.setCurrentAmount(updatedJackpot.getCurrentAmount().add(jackpotEntryPrice.multiply(new BigDecimal("0.5"))));
                 updatedJackpot.setLastUpdated(LocalDateTime.now());
                 jackpotRepository.save(updatedJackpot);
                 BigDecimal amountWon = jackpotEntryPrice.multiply(new BigDecimal("5"));
@@ -150,7 +147,6 @@ public class JackpotServiceImpl implements JackpotService {
             }
             case X10 -> {
                 Jackpot updatedJackpot = findByIdWithLock(jackpot.getId());
-                updatedJackpot.setCurrentAmount(updatedJackpot.getCurrentAmount().add(jackpotEntryPrice.multiply(new BigDecimal("0.5"))));
                 updatedJackpot.setLastUpdated(LocalDateTime.now());
                 jackpotRepository.save(updatedJackpot);
                 BigDecimal amountWon = jackpotEntryPrice.multiply(new BigDecimal("10"));
@@ -168,7 +164,6 @@ public class JackpotServiceImpl implements JackpotService {
             }
             case SOLDATO -> {
                 Jackpot updatedJackpot = findByIdWithLock(jackpot.getId());
-                updatedJackpot.setCurrentAmount(updatedJackpot.getCurrentAmount().add(jackpotEntryPrice.multiply(new BigDecimal("0.5"))));
                 updatedJackpot.setLastUpdated(LocalDateTime.now());
                 jackpotRepository.save(updatedJackpot);
                 winAmount = new BigDecimal("1");
@@ -197,7 +192,6 @@ public class JackpotServiceImpl implements JackpotService {
             }
             case JACKPOT -> {
                 Jackpot updatedJackpot = findByIdWithLock(jackpot.getId());
-                updatedJackpot.setCurrentAmount(updatedJackpot.getCurrentAmount().add(jackpotEntryPrice.multiply(new BigDecimal("0.5"))));
                 updatedJackpot.setLastUpdated(LocalDateTime.now());
                 updatedJackpot.setStatus(JackpotStatus.CLOSED);
                 jackpotRepository.save(updatedJackpot);
