@@ -15,6 +15,7 @@ public class RateLimitingCacheService {
     }
 
     private ConcurrentHashMap<Long, RateLimitInfo> userRateLimitCache = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Long, RateLimitInfo> userActionRateLimitCache = new ConcurrentHashMap<>();
 
     public synchronized void checkRateLimit(Long userId, int quantityToMint) {
         RateLimitInfo info = userRateLimitCache.getOrDefault(userId, new RateLimitInfo());
@@ -34,5 +35,22 @@ public class RateLimitingCacheService {
             info.actionCount += quantityToMint;
         }
         userRateLimitCache.put(userId, info);
+    }
+
+    public synchronized void checkRateLimitForJackpotPlay(Long userId) {
+        RateLimitInfo info = userActionRateLimitCache.getOrDefault(userId, new RateLimitInfo());
+
+        LocalDateTime now = LocalDateTime.now();
+        // Checks if more than 3 seconds have passed since the last play
+        if (info.lastActionTime == null || ChronoUnit.SECONDS.between(info.lastActionTime, now) >= 3) {
+            // Allows the play, resetting the timer
+            info.lastActionTime = now;
+            info.actionCount = 1; // Sets actionCount to 1, assuming one play per action
+        } else {
+            // If less than 3 seconds have passed, blocks the play
+            long timeToWait = 3 - ChronoUnit.SECONDS.between(info.lastActionTime, now);
+            throw new InvalidInputException("Please wait " + timeToWait + " more seconds to play again.");
+        }
+        userActionRateLimitCache.put(userId, info);
     }
 }

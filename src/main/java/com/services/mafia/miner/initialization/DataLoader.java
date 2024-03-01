@@ -1,8 +1,13 @@
 package com.services.mafia.miner.initialization;
 
+import com.services.mafia.miner.entity.jackpot.Jackpot;
+import com.services.mafia.miner.entity.jackpot.JackpotRewardType;
+import com.services.mafia.miner.entity.jackpot.WinningCategory;
 import com.services.mafia.miner.entity.nft.NFTCatalog;
 import com.services.mafia.miner.entity.nft.NFTType;
 import com.services.mafia.miner.entity.strongbox.StrongBoxGame;
+import com.services.mafia.miner.repository.jackpot.JackpotRepository;
+import com.services.mafia.miner.repository.jackpot.WinningCategoryRepository;
 import com.services.mafia.miner.repository.nft.NFTCatalogRepository;
 import com.services.mafia.miner.repository.strongbox.StrongBoxGameRepository;
 import lombok.AllArgsConstructor;
@@ -13,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @AllArgsConstructor
@@ -20,11 +26,77 @@ import java.util.ArrayList;
 public class DataLoader implements CommandLineRunner {
     private final NFTCatalogRepository nftCatalogRepository;
     private final StrongBoxGameRepository strongBoxGameRepository;
+    private final JackpotRepository jackpotRepository;
+    private final WinningCategoryRepository winningCategoryRepository;
 
     @Override
     public void run(String... args) {
         createNFTCatalog();
         generateFirstStrongboxGame();
+        createFirstJackpot();
+        createWinningCategory();
+    }
+
+    private void createWinningCategory() {
+        if(!winningCategoryRepository.findAll().isEmpty()){
+            return;
+        }
+        winningCategoryRepository.save(WinningCategory.builder()
+                .rewardType(JackpotRewardType.NOTHING)
+                .winningChance("87.7")
+                .rangeStart(124)
+                .rangeEnd(1000)
+                .build());
+        winningCategoryRepository.save(WinningCategory.builder()
+                .rewardType(JackpotRewardType.X1point5)
+                .winningChance("6")
+                .rangeStart(64)
+                .rangeEnd(123)
+                .build());
+        winningCategoryRepository.save(WinningCategory.builder()
+                .rewardType(JackpotRewardType.X2)
+                .winningChance("3")
+                .rangeStart(34)
+                .rangeEnd(63)
+                .build());
+        winningCategoryRepository.save(WinningCategory.builder()
+                .rewardType(JackpotRewardType.X3)
+                .winningChance("1.5")
+                .rangeStart(19)
+                .rangeEnd(33)
+                .build());
+        winningCategoryRepository.save(WinningCategory.builder()
+                .rewardType(JackpotRewardType.X5)
+                .winningChance("1")
+                .rangeStart(9)
+                .rangeEnd(18)
+                .build());
+        winningCategoryRepository.save(WinningCategory.builder()
+                .rewardType(JackpotRewardType.X10)
+                .winningChance("0.5")
+                .rangeStart(4)
+                .rangeEnd(8)
+                .build());
+        winningCategoryRepository.save(WinningCategory.builder()
+                .rewardType(JackpotRewardType.SOLDATO)
+                .winningChance("0.2")
+                .rangeStart(2)
+                .rangeEnd(3)
+                .build());
+        winningCategoryRepository.save(WinningCategory.builder()
+                .rewardType(JackpotRewardType.JACKPOT)
+                .winningChance("0.1")
+                .rangeStart(1)
+                .rangeEnd(1)
+                .build());
+    }
+
+    private void createFirstJackpot() {
+        List<Jackpot> jackpots = jackpotRepository.findAll();
+        if (jackpots.isEmpty()) {
+            Jackpot firstJackpot = Jackpot.builder().build();
+            jackpotRepository.save(firstJackpot);
+        }
     }
 
     private void generateFirstStrongboxGame() {

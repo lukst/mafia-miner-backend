@@ -10,4 +10,5 @@ import java.util.Optional;
 @Repository
 public interface NFTCatalogRepository extends JpaRepository<NFTCatalog, Long> {
     Optional<NFTCatalog> findNftCatalogByType(NFTType nftType);
+    Optional<NFTCatalog> findNftCatalogByName(String name);
 }
