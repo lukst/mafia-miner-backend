@@ -19,9 +19,14 @@ public class NFTCatalog extends BaseEntity {
     private String name;
     @Column
     private String image;
+    @Column
+    private String roi;
     @Enumerated(EnumType.STRING)
     @Column
     private NFTType type;
+    @Enumerated(EnumType.STRING)
+    @Column
+    private NFTFamily family;
     @OneToMany(mappedBy="nftCatalog", fetch = FetchType.LAZY)
     private List<NFT> nfts;
     @Column(nullable = false, precision = 19, scale = 5)

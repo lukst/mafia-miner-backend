@@ -18,7 +18,7 @@ public class NFTCatalogController {
     private final NFTCatalogService nftCatalogService;
 
     @GetMapping
-    public ResponseEntity<List<NFTCatalogDTO>> getTotalStats() {
+    public ResponseEntity<List<NFTCatalogDTO>> getAllCatalog() {
         return new ResponseEntity<>(nftCatalogService.findAll(), HttpStatus.OK);
     }
 }

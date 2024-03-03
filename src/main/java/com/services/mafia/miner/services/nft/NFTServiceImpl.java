@@ -1,10 +1,7 @@
 package com.services.mafia.miner.services.nft;
 
 import com.services.mafia.miner.dto.nft.NFTDTO;
-import com.services.mafia.miner.entity.nft.FarmType;
-import com.services.mafia.miner.entity.nft.NFT;
-import com.services.mafia.miner.entity.nft.NFTCatalog;
-import com.services.mafia.miner.entity.nft.NFTType;
+import com.services.mafia.miner.entity.nft.*;
 import com.services.mafia.miner.entity.transaction.TransactionType;
 import com.services.mafia.miner.entity.user.User;
 import com.services.mafia.miner.exception.InvalidInputException;
@@ -50,6 +47,9 @@ public class NFTServiceImpl implements NFTService {
         NFTCatalog nftCatalog = nftCatalogRepository.findById(catalogID).orElseThrow(() -> new InvalidInputException("Catalog does not exist"));
         if (nftCatalog.getType() == NFTType.FREE) {
             throw new InvalidInputException("Nice try, thanks for helping us improve our security");
+        }
+        if(nftCatalog.getFamily() == NFTFamily.YAKUZA && !bnbMint){
+            throw new InvalidInputException("Yakuza are only mintable by BNB");
         }
         BigDecimal mintPrice;
         if (bnbMint) {

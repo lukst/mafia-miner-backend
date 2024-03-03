@@ -34,8 +34,6 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final NonceRepository nonceRepository;
     private final IpGeolocationService ipGeolocationService;
     private final TokenRepository tokenRepository;
-    private final NFTRepository nftRepository;
-    private final NFTCatalogRepository nftCatalogRepository;
     private final LoginAttemptService loginAttemptService;
 
     @Override
@@ -59,7 +57,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
         var user = userRepository.findByWalletAddress(userAddress)
                 .orElseGet(() -> registerUser(authenticationRequest, request));
-
+        if(!user.isAccountNonLocked()){
+            throw new InvalidInputException("You are ban from the server");
+        }
         loginAttemptService.loginSucceeded(authenticationRequest.getUserAddress());
         nonceRepository.delete(nonce);
         revokeAllUserTokens(user);

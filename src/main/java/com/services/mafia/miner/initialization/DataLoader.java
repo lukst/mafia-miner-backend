@@ -4,6 +4,7 @@ import com.services.mafia.miner.entity.jackpot.Jackpot;
 import com.services.mafia.miner.entity.jackpot.JackpotRewardType;
 import com.services.mafia.miner.entity.jackpot.WinningCategory;
 import com.services.mafia.miner.entity.nft.NFTCatalog;
+import com.services.mafia.miner.entity.nft.NFTFamily;
 import com.services.mafia.miner.entity.nft.NFTType;
 import com.services.mafia.miner.entity.strongbox.StrongBoxGame;
 import com.services.mafia.miner.repository.jackpot.JackpotRepository;
@@ -38,7 +39,7 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void createWinningCategory() {
-        if(!winningCategoryRepository.findAll().isEmpty()){
+        if (!winningCategoryRepository.findAll().isEmpty()) {
             return;
         }
         winningCategoryRepository.save(WinningCategory.builder()
@@ -187,6 +188,86 @@ public class DataLoader implements CommandLineRunner {
                     .minFarmDays(25)
                     .maxFarmDays(30)
                     .dailyFarm(new BigDecimal("0.104").setScale(5, RoundingMode.HALF_UP))
+                    .build());
+        }
+        if (nftCatalogRepository.findAllByFamily(NFTFamily.YAKUZA).isEmpty()) {
+            nftCatalogRepository.save(NFTCatalog.builder()
+                    .name("Shatei")
+                    .image("shatei.png")
+                    .roi("200%")
+                    .type(NFTType.PAID)
+                    .family(NFTFamily.YAKUZA)
+                    .nfts(new ArrayList<>())
+                    .bnbCost(new BigDecimal("0.04").setScale(5, RoundingMode.HALF_UP))
+                    .mcoinCost(new BigDecimal("10").setScale(5, RoundingMode.HALF_UP))
+                    .minFarmDays(42)
+                    .maxFarmDays(42)
+                    .dailyFarm(new BigDecimal("0.00190").setScale(5, RoundingMode.HALF_UP))
+                    .build());
+            nftCatalogRepository.save(NFTCatalog.builder()
+                    .name("Kyodai")
+                    .image("kyodai.png")
+                    .roi("200%")
+                    .type(NFTType.PAID)
+                    .family(NFTFamily.YAKUZA)
+                    .nfts(new ArrayList<>())
+                    .bnbCost(new BigDecimal("0.06").setScale(5, RoundingMode.HALF_UP))
+                    .mcoinCost(new BigDecimal("10").setScale(5, RoundingMode.HALF_UP))
+                    .minFarmDays(42)
+                    .maxFarmDays(42)
+                    .dailyFarm(new BigDecimal("0.00286").setScale(5, RoundingMode.HALF_UP))
+                    .build());
+            nftCatalogRepository.save(NFTCatalog.builder()
+                    .name("Shingiin")
+                    .image("shingiin.png")
+                    .roi("200%")
+                    .type(NFTType.PAID)
+                    .family(NFTFamily.YAKUZA)
+                    .nfts(new ArrayList<>())
+                    .bnbCost(new BigDecimal("0.1").setScale(5, RoundingMode.HALF_UP))
+                    .mcoinCost(new BigDecimal("10").setScale(5, RoundingMode.HALF_UP))
+                    .minFarmDays(42)
+                    .maxFarmDays(42)
+                    .dailyFarm(new BigDecimal("0.00476").setScale(5, RoundingMode.HALF_UP))
+                    .build());
+            nftCatalogRepository.save(NFTCatalog.builder()
+                    .name("Shateigashira")
+                    .image("shateigashira.png")
+                    .roi("200%")
+                    .type(NFTType.PAID)
+                    .family(NFTFamily.YAKUZA)
+                    .nfts(new ArrayList<>())
+                    .bnbCost(new BigDecimal("0.2").setScale(5, RoundingMode.HALF_UP))
+                    .mcoinCost(new BigDecimal("10").setScale(5, RoundingMode.HALF_UP))
+                    .minFarmDays(42)
+                    .maxFarmDays(42)
+                    .dailyFarm(new BigDecimal("0.00952").setScale(5, RoundingMode.HALF_UP))
+                    .build());
+            nftCatalogRepository.save(NFTCatalog.builder()
+                    .name("Wakagashira")
+                    .image("wakagashira.png")
+                    .roi("200%")
+                    .type(NFTType.PAID)
+                    .family(NFTFamily.YAKUZA)
+                    .nfts(new ArrayList<>())
+                    .bnbCost(new BigDecimal("0.4").setScale(5, RoundingMode.HALF_UP))
+                    .mcoinCost(new BigDecimal("10").setScale(5, RoundingMode.HALF_UP))
+                    .minFarmDays(42)
+                    .maxFarmDays(42)
+                    .dailyFarm(new BigDecimal("0.01905").setScale(5, RoundingMode.HALF_UP))
+                    .build());
+            nftCatalogRepository.save(NFTCatalog.builder()
+                    .name("Oyabun")
+                    .image("oyabun.png")
+                    .roi("200%")
+                    .type(NFTType.PAID)
+                    .family(NFTFamily.YAKUZA)
+                    .nfts(new ArrayList<>())
+                    .bnbCost(new BigDecimal("1").setScale(5, RoundingMode.HALF_UP))
+                    .mcoinCost(new BigDecimal("10").setScale(5, RoundingMode.HALF_UP))
+                    .minFarmDays(42)
+                    .maxFarmDays(42)
+                    .dailyFarm(new BigDecimal("0.04762").setScale(5, RoundingMode.HALF_UP))
                     .build());
         }
     }
